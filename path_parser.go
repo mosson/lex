@@ -2,17 +2,21 @@ package lex
 
 import "regexp"
 
+var (
+	phraseParser       Parser = RegExp(regexp.MustCompile(`[a-zA-Z0-9\.\-\_]+`))
+	staticPhraseParser Parser = Seq(Token("/"), Phrase())
+	paramsPhraseParser Parser = Seq(Token("/"), Token(":"), Phrase())
+)
+
 func Phrase() Parser {
-	parser := RegExp(regexp.MustCompile(`[a-zA-Z0-9\.\-\_]+`))
 	return func(target string, position int) *Result {
-		return parser(target, position)
+		return phraseParser(target, position)
 	}
 }
 
 func StaticPhrase() Parser {
 	return func(target string, position int) *Result {
-		parser := Seq(Token("/"), Phrase())
-		result := parser(target, position)
+		result := staticPhraseParser(target, position)
 
 		if result.Success {
 			result.Attributes = assign(result.Attributes, map[string]string{
@@ -27,9 +31,7 @@ func StaticPhrase() Parser {
 
 func ParamsPhrase() Parser {
 	return func(target string, position int) *Result {
-		parser := Seq(Token("/"), Token(":"), Phrase())
-
-		result := parser(target, position)
+		result := paramsPhraseParser(target, position)
 
 		if result.Success {
 			result.Attributes = assign(result.Attributes, map[string]string{
@@ -45,9 +47,7 @@ func ParamsPhrase() Parser {
 
 func ParamsParser(phrase string) Parser {
 	return func(target string, position int) *Result {
-		parser := Seq(Token("/"), Phrase())
-
-		result := parser(target, position)
+		result := staticPhraseParser(target, position)
 
 		if result.Success {
 			result.Attributes = assign(result.Attributes, map[string]string{
