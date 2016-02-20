@@ -288,6 +288,12 @@ func TestRegExp(t *testing.T) {
 	if result2.Position != 0 {
 		t.Errorf("expected 0, actual %v", result2.Position)
 	}
+
+	result3 := RegExp(regexp.MustCompile("hoge"))("hoge", 5)
+
+	if result3.Success {
+		t.Errorf("expected false, actual %v", result3.Success)
+	}
 }
 
 func TestLazy(t *testing.T) {

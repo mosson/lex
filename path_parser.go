@@ -3,7 +3,7 @@ package lex
 import "regexp"
 
 func Phrase() Parser {
-	parser := RegExp(regexp.MustCompile(`[a-zA-Z0-9]+`))
+	parser := RegExp(regexp.MustCompile(`[a-zA-Z0-9\.\-\_]+`))
 	return func(target string, position int) *Result {
 		return parser(target, position)
 	}
