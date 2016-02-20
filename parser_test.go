@@ -19,19 +19,19 @@ func TestAssign(t *testing.T) {
 	result := assign(a, b, c)
 
 	if result["a"] != "d" {
-		t.Errorf("後ろの引数がマージされていないとおかしい")
+		t.Errorf("expected d, actual %v", result["a"])
 	}
 
 	if result["b"] != "b" {
-		t.Errorf("マージされていないとおかしい")
+		t.Errorf("expected b, actual %v", result[""])
 	}
 
 	if result["c"] != "c" {
-		t.Errorf("マージされていないとおかしい")
+		t.Errorf("expected c, actual %v", result["c"])
 	}
 
 	if result["d"] != "d" {
-		t.Errorf("マージされていないとおかしい")
+		t.Errorf("expected d, actual %v", result["d"])
 	}
 
 }
@@ -40,15 +40,15 @@ func TestIncompatible(t *testing.T) {
 	result := incompatible(4)
 
 	if result.Success {
-		t.Error("必ず失敗しなければなりません")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "" {
-		t.Error("必ず空文字を返さなければなりません")
+		t.Errorf("expected \"\", actual %v", result.Target)
 	}
 
 	if result.Position != 4 {
-		t.Error("与えた位置を返さなければなりません")
+		t.Errorf("expected 4, actual %v", result.Position)
 	}
 }
 
@@ -56,42 +56,42 @@ func TestToken(t *testing.T) {
 	result := Token("hoge")("hoge", 0)
 	if result.Success {
 		if result.Target != "hoge" {
-			t.Error("正確に文字列をパースできていません")
+			t.Errorf("expected hoge, actual %v", result.Target)
 		}
 
 		if result.Position != len("hoge") {
-			t.Error("正確な長さがパースできていません")
+			t.Errorf("expected %v, actual %v", len("hoge"), result.Position)
 		}
 	} else {
-		t.Error("正確にパースできていません")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	// 解析文字が入力より長い場合
 	result2 := Token("hogehoge")("hoge", 0)
 	if result2.Success {
-		t.Error("失敗しなければならない")
+		t.Errorf("expected true, actual %v", result2.Success)
 	}
 
 	if result2.Target != "" {
-		t.Error("空文字でなければならない")
+		t.Errorf("expected \"\", actual %v", result2.Target)
 	}
 
 	if result2.Position != 0 {
-		t.Error("読み出し位置を更新してはならない")
+		t.Errorf("expected 0, actual %v", result2.Position)
 	}
 
 	// incompatible
 	result3 := Token("hoge")("fugafuga", 0)
 	if result3.Success {
-		t.Error("見つからない場合は失敗しなければならない")
+		t.Errorf("expected true, actual %v", result3.Success)
 	}
 
 	if result3.Target != "" {
-		t.Error("見つからない場合はから文字を返さなければならない")
+		t.Errorf("expected \"\", actual %v", result3.Target)
 	}
 
 	if result3.Position != 0 {
-		t.Error("見つからない場合は読み出し位置を更新しない")
+		t.Errorf("expected 0, actual %v", result3.Position)
 	}
 }
 
@@ -99,29 +99,29 @@ func TestMany(t *testing.T) {
 	result := Many(Token("hoge"))("hogehoge", 0)
 	t.Log(result)
 	if !result.Success {
-		t.Error("合致する場合は成功しなければならない")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "hogehoge" {
-		t.Error("正確に文字列を回収しなければならない")
+		t.Errorf("expected hogehoge, actual %v", result.Target)
 	}
 
 	if result.Position != 8 {
-		t.Error("正確な読み出し位置を返さなければならない")
+		t.Errorf("expected 8, actual %v", result.Position)
 	}
 
 	result2 := Many(Token("hoge"))("hogehoge", 4)
 	t.Log(result2)
 	if !result2.Success {
-		t.Error("合致する場合は成功しなければならない")
+		t.Errorf("expected true, actual %v", result2.Success)
 	}
 
 	if result2.Target != "hoge" {
-		t.Error("正確な範囲をとり出さなければならない")
+		t.Errorf("expected hoge, actual %v", result2.Target)
 	}
 
 	if result2.Position != 8 {
-		t.Error("正確な読み取り位置を更新しなければならない")
+		t.Errorf("expected 8, actual %v", result2.Position)
 	}
 }
 
@@ -129,43 +129,43 @@ func TestChoice(t *testing.T) {
 	result := Choice(Token("foo"), Token("bar"))("bar", 0)
 
 	if !result.Success {
-		t.Error("一致するものがあればtrueを返す")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "bar" {
-		t.Error("一致する箇所が正しくない")
+		t.Errorf("expected bar, actual %v", result.Target)
 	}
 
 	if result.Position != 3 {
-		t.Error("一致する読み出し位置が違う")
+		t.Errorf("expected 3, actual %v", result.Position)
 	}
 
 	result2 := Choice(Token("foo"), Token("bar"))("foo", 0)
 
 	if !result2.Success {
-		t.Error("一致するものがあればtrueを返す")
+		t.Errorf("expected true, actual %v", result2.Success)
 	}
 
 	if result2.Target != "foo" {
-		t.Error("一致する箇所が正しくない")
+		t.Errorf("expected foo, actual %v", result2.Target)
 	}
 
 	if result2.Position != 3 {
-		t.Error("一致する読み出し位置が違う")
+		t.Errorf("expected 3, actual %v", result2.Position)
 	}
 
 	result3 := Choice(Token("foo"), Token("bar"))("baz", 0)
 
 	if result3.Success {
-		t.Error("これは一致しない")
+		t.Errorf("expected false, actual %v", result.Success)
 	}
 
 	if result3.Target != "" {
-		t.Error("から文字を返さないとおかしい")
+		t.Errorf("expected \"\", actual %v", result3.Target)
 	}
 
 	if result3.Position != 0 {
-		t.Error("0を返さないとおかしい")
+		t.Errorf("expected 0, actual %v", result3.Position)
 	}
 }
 
@@ -173,30 +173,29 @@ func TestSeq(t *testing.T) {
 	result := Seq(Token("foo"), Token("bar"), Token("baz"))("foobarbaz", 0)
 
 	if !result.Success {
-		t.Error("成功しないとおかしい")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "foobarbaz" {
-		t.Error("foobarbazを拾えないとおかしい")
+		t.Errorf("expected foobarbaz, actual %v", result.Target)
 	}
 
 	if result.Position != len("foobarbaz") {
-		t.Error("正しい長さをとれないとおかしい")
+		t.Errorf("expected foobarbaz, actual %v", result.Position)
 	}
 
 	result2 := Seq(Token("foo"), Token("bar"), Token("baz"))("bazbarfoo", 0)
-	t.Log(result2)
 
 	if result2.Success {
-		t.Error("成功するとおかしい")
+		t.Errorf("expected false, actual %v", result2.Success)
 	}
 
 	if result2.Target != "" {
-		t.Error("から文字でなければおかしい")
+		t.Errorf("expected \"\", actual %v", result2.Target)
 	}
 
 	if result2.Position != 0 {
-		t.Error("0でなければおかしい")
+		t.Errorf("expected 0, actual %v", result2.Position)
 	}
 }
 
@@ -204,29 +203,29 @@ func TestOption(t *testing.T) {
 	result := Option(Token("A"))("A", 0)
 
 	if !result.Success {
-		t.Error("成功しないとおかしい")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "A" {
-		t.Error("Aじゃないとおかしい")
+		t.Errorf("expected A, actual %v", result.Target)
 	}
 
 	if result.Position != 1 {
-		t.Error("1じゃないとおかしい")
+		t.Errorf("expected 1, actual %v", result.Position)
 	}
 
 	result2 := Option(Token("A"))("B", 0)
 
 	if !result2.Success {
-		t.Error("成功しないとおかしい")
+		t.Errorf("expected true, actual %v", result2.Success)
 	}
 
 	if result2.Target != "" {
-		t.Error("空文字じゃないとおかしい")
+		t.Errorf("expected \"\", actual %v", result2.Target)
 	}
 
 	if result2.Position != 0 {
-		t.Error("0じゃないとおかしい")
+		t.Errorf("expected 0, actual %v", result2.Position)
 	}
 
 }
@@ -235,29 +234,29 @@ func TestChar(t *testing.T) {
 	result := Char("abc")("c", 0)
 
 	if !result.Success {
-		t.Error("成功しないとおかしい")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "c" {
-		t.Error("cじゃないとおかしい")
+		t.Errorf("expected c, actual %v", result.Target)
 	}
 
 	if result.Position != 1 {
-		t.Error("1じゃないとおかしい")
+		t.Errorf("expected 1, actual %v", result.Position)
 	}
 
 	result2 := Char("abc")("d", 0)
 
 	if result2.Success {
-		t.Error("成功するとおかしい")
+		t.Errorf("expected false, actual %v", result2.Success)
 	}
 
 	if result2.Target != "" {
-		t.Error("空文字じゃないとおかしい")
+		t.Errorf("expected \"\", actual %v", result2.Target)
 	}
 
 	if result2.Position != 0 {
-		t.Error("0じゃないとおかしい")
+		t.Errorf("expected 0, actual %v", result2.Position)
 	}
 }
 
@@ -265,29 +264,29 @@ func TestRegExp(t *testing.T) {
 	result := RegExp(regexp.MustCompile("\\d+"))("a2014b333", 0)
 
 	if !result.Success {
-		t.Error("成功しないとおかしい")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "2014" {
-		t.Error("2014を抜き出せないとおかしい")
+		t.Errorf("expected 2014, actual %v", result.Target)
 	}
 
 	if result.Position != 5 {
-		t.Error("5文字目じゃないとおかしい")
+		t.Errorf("expected 5, actual %v", result.Position)
 	}
 
 	result2 := RegExp(regexp.MustCompile("\\d+"))("abcd", 0)
 
 	if result2.Success {
-		t.Error("失敗しないとおかしい")
+		t.Errorf("expected false, actual %v", result2.Success)
 	}
 
 	if result2.Target != "" {
-		t.Error("空文字を返さないとおかしい")
+		t.Errorf("expected \"\", actual %v", result2.Target)
 	}
 
 	if result2.Position != 0 {
-		t.Error("0を返さないとおかしい")
+		t.Errorf("expected 0, actual %v", result2.Position)
 	}
 }
 
@@ -295,7 +294,7 @@ func TestLazy(t *testing.T) {
 	result := Lazy(Token("hello"))("hello", 0)
 
 	if !result.Success {
-		t.Error("成功しないとおかしい")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 }
 
@@ -305,15 +304,15 @@ func TestMap(t *testing.T) {
 	})("hello", 0)
 
 	if !result.Success {
-		t.Error("成功しないとおかしい")
+		t.Errorf("expected true, actual %v", result.Success)
 	}
 
 	if result.Target != "hello, world" {
-		t.Error("文字を加工できていないとおかしい")
+		t.Errorf("expected hello, world, actual %v", result.Target)
 	}
 
 	if result.Position != 5 {
-		t.Error("5じゃないとおかしい")
+		t.Errorf("expected 5, actual %v", result.Position)
 	}
 
 	result2 := Map(Token("coming"), func(str string) string {
@@ -321,14 +320,14 @@ func TestMap(t *testing.T) {
 	})("hoge", 0)
 
 	if result2.Success {
-		t.Error("成功するとおかしい")
+		t.Errorf("expected false, actual %v", result2.Success)
 	}
 
 	if result2.Target != "" {
-		t.Error("空文字じゃないとおかしい")
+		t.Errorf("expected \"\", actual %v", result2.Target)
 	}
 
 	if result2.Position != 0 {
-		t.Error("0じゃないとおかしい")
+		t.Errorf("expected 0, actual %v", result2.Position)
 	}
 }

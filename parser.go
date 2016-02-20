@@ -86,7 +86,7 @@ func Choice(Parsers ...Parser) Parser {
 
 			parsed := p(target, position)
 			if parsed.Success {
-				return &Result{Success: true, Target: parsed.Target, Position: parsed.Position, Attributes: map[string]string{}}
+				return &Result{Success: true, Target: parsed.Target, Position: parsed.Position, Attributes: parsed.Attributes}
 			}
 		}
 
@@ -160,9 +160,14 @@ func Char(str string) Parser {
 func RegExp(pattern *regexp.Regexp) Parser {
 
 	return func(target string, position int) *Result {
-		if pattern.MatchString(target) {
-			index := pattern.FindStringIndex(target)
-			return &Result{Success: true, Target: pattern.FindString(target), Position: index[1], Attributes: map[string]string{}}
+		if position > len(target) {
+			return incompatible(position)
+		}
+
+		t := target[position:]
+		if pattern.MatchString(t) {
+			index := pattern.FindStringIndex(t)
+			return &Result{Success: true, Target: pattern.FindString(t), Position: position + index[1], Attributes: map[string]string{}}
 		} else {
 			return incompatible(position)
 		}
