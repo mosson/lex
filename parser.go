@@ -144,7 +144,12 @@ func Char(str string) Parser {
 	}
 
 	return func(target string, position int) *Result {
-		targetString := target[position:1]
+		if len(target) < position+1 {
+			return incompatible(position)
+		}
+
+		targetString := target[position : position+1]
+
 		if _, ok := dict[targetString]; ok {
 			return &Result{Success: true, Target: targetString, Position: position + 1, Attributes: map[string]string{}}
 		} else {

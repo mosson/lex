@@ -1,9 +1,9 @@
 package lex
 
-import "regexp"
+const availableChars = "abcdefghijklmnopqrstuvwxyzABCDEFHIJKLMNOPQRSTUVWXYZ1234567890-_."
 
 var (
-	phraseParser       Parser = RegExp(regexp.MustCompile(`[a-zA-Z0-9\.\-\_]+`))
+	phraseParser       Parser = Many(Char(availableChars))
 	staticPhraseParser Parser = Seq(Token("/"), Phrase())
 	paramsPhraseParser Parser = Seq(Token("/"), Token(":"), Phrase())
 )

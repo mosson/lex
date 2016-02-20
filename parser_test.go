@@ -258,6 +258,16 @@ func TestChar(t *testing.T) {
 	if result2.Position != 0 {
 		t.Errorf("expected 0, actual %v", result2.Position)
 	}
+
+	result3 := Many(Char("a"))("aaabb", 0)
+
+	if !result3.Success {
+		t.Errorf("expected true, actual %v", result3.Success)
+	}
+
+	if result3.Target != "aaa" {
+		t.Errorf("expected aaa, actual %v", result3.Target)
+	}
 }
 
 func TestRegExp(t *testing.T) {
