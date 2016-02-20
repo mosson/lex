@@ -5,6 +5,37 @@ import (
 	"testing"
 )
 
+func TestAssign(t *testing.T) {
+	a, b, c := map[string]string{
+		"a": "a",
+		"b": "b",
+	}, map[string]string{
+		"c": "c",
+		"a": "d",
+	}, map[string]string{
+		"d": "d",
+	}
+
+	result := assign(a, b, c)
+
+	if result["a"] != "d" {
+		t.Errorf("後ろの引数がマージされていないとおかしい")
+	}
+
+	if result["b"] != "b" {
+		t.Errorf("マージされていないとおかしい")
+	}
+
+	if result["c"] != "c" {
+		t.Errorf("マージされていないとおかしい")
+	}
+
+	if result["d"] != "d" {
+		t.Errorf("マージされていないとおかしい")
+	}
+
+}
+
 func TestIncompatible(t *testing.T) {
 	result := incompatible(4)
 

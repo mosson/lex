@@ -6,15 +6,29 @@ import (
 )
 
 type Result struct {
-	Success  bool
-	Target   string
-	Position int
+	Success    bool
+	Target     string
+	Position   int
+	Attributes map[string]string
 }
 
 type Parser func(string, int) *Result
 
+func assign(assigns ...map[string]string) map[string]string {
+	result := make(map[string]string)
+
+	for i := 0; i < len(assigns); i++ {
+		target := assigns[i]
+		for k, v := range target {
+			result[k] = v
+		}
+	}
+
+	return result
+}
+
 func incompatible(position int) *Result {
-	return &Result{Success: false, Target: "", Position: position}
+	return &Result{Success: false, Target: "", Position: position, Attributes: map[string]string{}}
 }
 
 /*
@@ -30,7 +44,7 @@ func Token(str string) Parser {
 		}
 
 		if target[position:position+l] == str {
-			return &Result{Success: true, Target: str, Position: position + l}
+			return &Result{Success: true, Target: str, Position: position + l, Attributes: map[string]string{}}
 		} else {
 			return incompatible(position)
 		}
@@ -43,7 +57,7 @@ func Token(str string) Parser {
 
 func Many(fn Parser) Parser {
 	return func(target string, position int) *Result {
-		var r []string
+		r, a := make([]string, 0), make(map[string]string, 0)
 		p := position
 
 		for {
@@ -51,12 +65,13 @@ func Many(fn Parser) Parser {
 			if parsed.Success {
 				r = append(r, parsed.Target)
 				p = parsed.Position
+				a = assign(a, parsed.Attributes)
 			} else {
 				break
 			}
 		}
 
-		return &Result{Success: true, Target: strings.Join(r[:], ""), Position: p}
+		return &Result{Success: true, Target: strings.Join(r[:], ""), Position: p, Attributes: a}
 	}
 }
 
@@ -71,7 +86,7 @@ func Choice(Parsers ...Parser) Parser {
 
 			parsed := p(target, position)
 			if parsed.Success {
-				return &Result{Success: true, Target: parsed.Target, Position: parsed.Position}
+				return &Result{Success: true, Target: parsed.Target, Position: parsed.Position, Attributes: map[string]string{}}
 			}
 		}
 
@@ -85,7 +100,7 @@ func Choice(Parsers ...Parser) Parser {
 
 func Seq(Parsers ...Parser) Parser {
 	return func(target string, position int) *Result {
-		var r []string
+		r, a := make([]string, 0), make(map[string]string, 0)
 		pos := position
 		for i := 0; i < len(Parsers); i++ {
 			p := Parsers[i]
@@ -93,12 +108,13 @@ func Seq(Parsers ...Parser) Parser {
 			if parsed.Success {
 				r = append(r, parsed.Target)
 				pos = parsed.Position
+				a = assign(a, parsed.Attributes)
 			} else {
 				return incompatible(position)
 			}
 		}
 
-		return &Result{Success: true, Target: strings.Join(r[:], ""), Position: pos}
+		return &Result{Success: true, Target: strings.Join(r[:], ""), Position: pos, Attributes: a}
 	}
 }
 
@@ -112,7 +128,7 @@ func Option(p Parser) Parser {
 		if r.Success {
 			return r
 		} else {
-			return &Result{Success: true, Target: "", Position: position}
+			return &Result{Success: true, Target: "", Position: position, Attributes: map[string]string{}}
 		}
 	}
 }
@@ -130,7 +146,7 @@ func Char(str string) Parser {
 	return func(target string, position int) *Result {
 		targetString := target[position:1]
 		if _, ok := dict[targetString]; ok {
-			return &Result{Success: true, Target: targetString, Position: position + 1}
+			return &Result{Success: true, Target: targetString, Position: position + 1, Attributes: map[string]string{}}
 		} else {
 			return incompatible(position)
 		}
@@ -146,7 +162,7 @@ func RegExp(pattern *regexp.Regexp) Parser {
 	return func(target string, position int) *Result {
 		if pattern.MatchString(target) {
 			index := pattern.FindStringIndex(target)
-			return &Result{Success: true, Target: pattern.FindString(target), Position: index[1]}
+			return &Result{Success: true, Target: pattern.FindString(target), Position: index[1], Attributes: map[string]string{}}
 		} else {
 			return incompatible(position)
 		}
@@ -172,7 +188,7 @@ func Map(p Parser, fn func(target string) string) Parser {
 	return func(target string, position int) *Result {
 		res := p(target, position)
 		if res.Success {
-			return &Result{Success: true, Target: fn(res.Target), Position: res.Position}
+			return &Result{Success: true, Target: fn(res.Target), Position: res.Position, Attributes: map[string]string{}}
 		} else {
 			return res
 		}
