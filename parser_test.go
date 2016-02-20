@@ -297,10 +297,24 @@ func TestRegExp(t *testing.T) {
 }
 
 func TestLazy(t *testing.T) {
-	result := Lazy(Token("hello"))("hello", 0)
+	fn := Token("hello")
+	result := Lazy(&fn)("hello", 0)
 
 	if !result.Success {
 		t.Errorf("expected true, actual %v", result.Success)
+	}
+
+	var parser Parser
+	parser = Option(Seq(Token("hoge"), Lazy(&parser)))
+
+	result2 := parser("hogehogehoge", 0)
+
+	if !result2.Success {
+		t.Errorf("expected true, actual %v", result2.Success)
+	}
+
+	if result2.Target != "hogehogehoge" {
+		t.Errorf("expected hogehogehoge, actual %v", result2.Target)
 	}
 }
 

@@ -176,12 +176,13 @@ func RegExp(pattern *regexp.Regexp) Parser {
 
 /*
 遅延評価ができるパーサーを生成
-golangでは実質遅延評価はできないのであまり意味をなさない
+主に再帰を表現するのに使う
 */
 
-func Lazy(p Parser) Parser {
+func Lazy(p *Parser) Parser {
 	return func(target string, position int) *Result {
-		return p(target, position)
+		var fn Parser = *p
+		return fn(target, position)
 	}
 }
 
