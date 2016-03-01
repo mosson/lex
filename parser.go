@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Result パースの結果を表す構造体
 type Result struct {
 	Success    bool
 	Target     string
@@ -12,6 +13,7 @@ type Result struct {
 	Attributes map[string]string
 }
 
+// Parser パースを行う関数の型のシグニチャ
 type Parser func(string, int) *Result
 
 func assign(assigns ...map[string]string) map[string]string {
@@ -28,65 +30,29 @@ func assign(assigns ...map[string]string) map[string]string {
 }
 
 func incompatible(position int) *Result {
-	return &Result{Success: false, Target: "", Position: position, Attributes: map[string]string{}}
-}
-
-/*
-与えられた文字に一致するパーサーを返す
-*/
-
-func Token(str string) Parser {
-	l := len(str)
-
-	return func(target string, position int) *Result {
-		if len(target) < l+position {
-			return incompatible(position)
-		}
-
-		if target[position:position+l] == str {
-			return &Result{Success: true, Target: str, Position: position + l, Attributes: map[string]string{}}
-		} else {
-			return incompatible(position)
-		}
+	return &Result{
+		Success:    false,
+		Target:     "",
+		Position:   position,
+		Attributes: map[string]string{},
 	}
 }
 
-/*
-与えられたパーサーに０階以上合致するパーサーを返す
-*/
+// Token 与えられた文字に一致するパーサーを返す
+func Token(sample string) Parser {
+	length := len(sample)
 
-func Many(fn Parser) Parser {
 	return func(target string, position int) *Result {
-		r, a := make([]string, 0), make(map[string]string, 0)
-		p := position
-
-		for {
-			var parsed *Result = fn(target, p)
-			if parsed.Success {
-				r = append(r, parsed.Target)
-				p = parsed.Position
-				a = assign(a, parsed.Attributes)
-			} else {
-				break
-			}
+		if len(target) < length+position {
+			return incompatible(position)
 		}
 
-		return &Result{Success: true, Target: strings.Join(r[:], ""), Position: p, Attributes: a}
-	}
-}
-
-/*
-与えられたパーサーのいづれかが成功すればよい
-*/
-
-func Choice(Parsers ...Parser) Parser {
-	return func(target string, position int) *Result {
-		for i := 0; i < len(Parsers); i++ {
-			p := Parsers[i]
-
-			parsed := p(target, position)
-			if parsed.Success {
-				return &Result{Success: true, Target: parsed.Target, Position: parsed.Position, Attributes: parsed.Attributes}
+		if target[position:position+length] == sample {
+			return &Result{
+				Success:    true,
+				Target:     sample,
+				Position:   position + length,
+				Attributes: map[string]string{},
 			}
 		}
 
@@ -94,53 +60,105 @@ func Choice(Parsers ...Parser) Parser {
 	}
 }
 
-/*
-パーサーを連結する
-*/
-
-func Seq(Parsers ...Parser) Parser {
+// Many 与えられたパーサーに0回以上合致するパーサーを返す
+func Many(parser Parser) Parser {
 	return func(target string, position int) *Result {
-		r, a := make([]string, 0), make(map[string]string, 0)
-		pos := position
-		for i := 0; i < len(Parsers); i++ {
-			p := Parsers[i]
-			var parsed *Result = p(target, pos)
-			if parsed.Success {
-				r = append(r, parsed.Target)
-				pos = parsed.Position
-				a = assign(a, parsed.Attributes)
+		var targets []string
+		cursor := position
+		targets = make([]string, 0)
+		attributes := make(map[string]string, 0)
+
+		for {
+			result := parser(target, cursor)
+			if result.Success {
+				cursor = result.Position
+				targets = append(targets, result.Target)
+				attributes = assign(attributes, result.Attributes)
+			} else {
+				break
+			}
+		}
+
+		return &Result{
+			Success:    true,
+			Target:     strings.Join(targets[:], ""),
+			Position:   cursor,
+			Attributes: attributes,
+		}
+	}
+}
+
+// Choice 与えられたパーサーのいづれかが成功すればよいパーサーを返す
+func Choice(parsers ...Parser) Parser {
+	return func(target string, position int) *Result {
+		for i := 0; i < len(parsers); i++ {
+			parser := parsers[i]
+
+			result := parser(target, position)
+			if result.Success {
+				return &Result{
+					Success:    true,
+					Target:     result.Target,
+					Position:   result.Position,
+					Attributes: result.Attributes,
+				}
+			}
+		}
+
+		return incompatible(position)
+	}
+}
+
+// Seq 引数すべてのパーサーを順番通りに検査するパーサーを返す
+func Seq(parsers ...Parser) Parser {
+	return func(target string, position int) *Result {
+		var targets []string
+		cursor := position
+		targets = make([]string, 0)
+		attributes := make(map[string]string, 0)
+		for i := 0; i < len(parsers); i++ {
+			parser := parsers[i]
+			result := parser(target, cursor)
+			if result.Success {
+				cursor = result.Position
+				targets = append(targets, result.Target)
+				attributes = assign(attributes, result.Attributes)
 			} else {
 				return incompatible(position)
 			}
 		}
 
-		return &Result{Success: true, Target: strings.Join(r[:], ""), Position: pos, Attributes: a}
-	}
-}
-
-/*
-失敗してもよいパーサー評価
-*/
-
-func Option(p Parser) Parser {
-	return func(target string, position int) *Result {
-		var r *Result = p(target, position)
-		if r.Success {
-			return r
-		} else {
-			return &Result{Success: true, Target: "", Position: position, Attributes: map[string]string{}}
+		return &Result{
+			Success:    true,
+			Target:     strings.Join(targets[:], ""),
+			Position:   cursor,
+			Attributes: attributes,
 		}
 	}
 }
 
-/*
-入力された文字列のどれかに一致するパーサーを生成
-*/
+// Option 引数のパーサーの成否を判断しないパーサーを返す
+func Option(parser Parser) Parser {
+	return func(target string, position int) *Result {
+		result := parser(target, position)
+		if result.Success {
+			return result
+		}
 
-func Char(str string) Parser {
-	dict := make(map[string]bool, len(str))
-	for _, c := range str {
-		dict[string(c)] = true
+		return &Result{
+			Success:    true,
+			Target:     "",
+			Position:   position,
+			Attributes: map[string]string{},
+		}
+	}
+}
+
+// Char 入力された文字列のどれかに一致するパーサーを返す
+func Char(src string) Parser {
+	dict := make(map[string]bool, len(src))
+	for _, r := range src {
+		dict[string(r)] = true
 	}
 
 	return func(target string, position int) *Result {
@@ -148,60 +166,63 @@ func Char(str string) Parser {
 			return incompatible(position)
 		}
 
-		targetString := target[position : position+1]
+		targetChar := target[position : position+1]
 
-		if _, ok := dict[targetString]; ok {
-			return &Result{Success: true, Target: targetString, Position: position + 1, Attributes: map[string]string{}}
-		} else {
-			return incompatible(position)
+		if _, ok := dict[targetChar]; ok {
+			return &Result{
+				Success:    true,
+				Target:     targetChar,
+				Position:   position + 1,
+				Attributes: map[string]string{},
+			}
 		}
+
+		return incompatible(position)
 	}
 }
 
-/*
-正規表現を使用するパーサーを生成
-*/
-
+// RegExp 正規表現を使用するパーサーを返す
 func RegExp(pattern *regexp.Regexp) Parser {
-
 	return func(target string, position int) *Result {
 		if position > len(target) {
 			return incompatible(position)
 		}
 
-		t := target[position:]
-		if pattern.MatchString(t) {
-			index := pattern.FindStringIndex(t)
-			return &Result{Success: true, Target: pattern.FindString(t), Position: position + index[1], Attributes: map[string]string{}}
-		} else {
-			return incompatible(position)
+		sample := target[position:]
+		if pattern.MatchString(sample) {
+			index := pattern.FindStringIndex(sample)
+			return &Result{
+				Success:    true,
+				Target:     pattern.FindString(sample),
+				Position:   position + index[1],
+				Attributes: map[string]string{},
+			}
 		}
+
+		return incompatible(position)
 	}
 }
 
-/*
-遅延評価ができるパーサーを生成
-主に再帰を表現するのに使う
-*/
-
-func Lazy(p *Parser) Parser {
+// Lazy 遅延評価ができるパーサーを生成
+func Lazy(ptr *Parser) Parser {
 	return func(target string, position int) *Result {
-		var fn Parser = *p
-		return fn(target, position)
+		parser := *ptr
+		return parser(target, position)
 	}
 }
 
-/*
-Targetを加工できるパーサーを生成
-*/
-
-func Map(p Parser, fn func(target string) string) Parser {
+// Map Result.Targetを加工できるパーサーを返す
+func Map(parser Parser, processFn func(target string) string) Parser {
 	return func(target string, position int) *Result {
-		res := p(target, position)
-		if res.Success {
-			return &Result{Success: true, Target: fn(res.Target), Position: res.Position, Attributes: map[string]string{}}
-		} else {
-			return res
+		result := parser(target, position)
+		if result.Success {
+			return &Result{
+				Success:    true,
+				Target:     processFn(result.Target),
+				Position:   result.Position,
+				Attributes: map[string]string{},
+			}
 		}
+		return result
 	}
 }
